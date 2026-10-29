@@ -11,6 +11,9 @@ CarPlay ekranında YouTube (ve deneysel olarak Netflix) oynatmak için bir iOS u
   uygulamalarına veriyor. Bu yüzden gerçek araçta çalıştırmanın yolları: TrollStore, jailbreak veya
   yetkinin profile eklenebildiği başka bir dağıtım yöntemi.
 - **iOS Simülatöründe** yetki zorunlu tutulmuyor. Geliştirme ve test için bu yeterli (aşağıya bakın).
+- Proje, yetki dosyasını **yalnızca simülatör derlemelerine** ekler. Böylece ücretsiz (Personal Team) hesapla
+  iPhone'a da kurulabilir. Ama yetki olmadığı için uygulama gerçek araçta CarPlay ekranında görünmez;
+  telefonda normal bir video uygulaması olarak çalışır.
 - **Netflix:** Netflix mobil tarayıcıda oynatmaya izin vermiyor. Uygulama masaüstü Safari gibi görünüyor ama
   FairPlay DRM ve Netflix'in kendi kısıtları yüzünden oynatma büyük olasılıkla başarısız olur ya da siyah ekran
   verir. YouTube sorunsuz çalışmalı.
