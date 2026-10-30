@@ -1,7 +1,7 @@
 # Generate the Xcode project with:  brew install xcodegen && xcodegen
 name: GTAMap
 options:
-  bundleIdPrefix: com.example
+  bundleIdPrefix: com.mkcaglar
   deploymentTarget:
     iOS: "16.0"
 packages:
@@ -21,7 +21,8 @@ targets:
         product: MapLibre
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.gtamap
+        PRODUCT_BUNDLE_IDENTIFIER: com.mkcaglar.gtamap
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.9"
         CODE_SIGN_STYLE: Automatic
