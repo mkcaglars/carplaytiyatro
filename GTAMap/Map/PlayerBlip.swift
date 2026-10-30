@@ -15,7 +15,7 @@ enum PlayerBlip {
             arrow.addLine(to: CGPoint(x: s * 0.5, y: s * 0.68)) // notch
             arrow.addLine(to: CGPoint(x: s * 0.20, y: s * 0.86))
             arrow.close()
-            arrow.lineJoin = .round
+            arrow.lineJoinStyle = .round
 
             cg.setShadow(offset: .zero, blur: s * 0.15, color: UIColor.white.withAlphaComponent(0.6).cgColor)
             UIColor.white.setFill()
