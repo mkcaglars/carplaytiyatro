@@ -25,12 +25,11 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.9"
         CODE_SIGN_STYLE: Automatic
-    entitlements:
-      path: GTAMap/Resources/GTAMap.entitlements
-      properties:
-        # Navigation-app CarPlay entitlement. Works in the Simulator as-is;
-        # on a device Apple must grant it to your team first.
-        com.apple.developer.carplay-maps: true
+        # The CarPlay navigation entitlement is applied to Simulator builds only, so a
+        # free/personal team can sign the app. Once Apple grants the entitlement to your
+        # team, set CODE_SIGN_ENTITLEMENTS for device builds too (or move it to base).
+        CODE_SIGN_ENTITLEMENTS: ""
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": Config/GTAMap.entitlements
     info:
       path: GTAMap/Resources/Info.plist
       properties:

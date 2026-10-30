@@ -28,7 +28,7 @@ A live, GTA-radar-style navigation map for Apple CarPlay. It uses only free serv
 
 ### On a real car
 
-CarPlay navigation apps need the `com.apple.developer.carplay-maps` entitlement, which Apple must grant to your team. Request it at <https://developer.apple.com/carplay/>. The Simulator works without it.
+CarPlay navigation apps need the `com.apple.developer.carplay-maps` entitlement, which Apple must grant to your team. Request it at <https://developer.apple.com/carplay/>. Until then the entitlement (`Config/GTAMap.entitlements`) is applied to Simulator builds only, so a free team can still sign; once granted, enable it for device builds in `project.yml`.
 
 ## Tune the look in a browser
 
