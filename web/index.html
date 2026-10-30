@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GTA Map Preview</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+  <script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+  <style>
+    html, body, #map { margin: 0; height: 100%; background: #16181b; }
+    #hud { position: absolute; right: 20px; bottom: 28px; text-align: right; color: #fff;
+           font-family: -apple-system, system-ui, sans-serif; text-shadow: 1px 1px 2px #000; pointer-events: none; }
+    #street { font-size: 13px; font-weight: 600; color: #d8d8d8; letter-spacing: .05em; }
+    #area { font-size: 26px; font-weight: 900; font-style: italic; }
+    #help { position: absolute; left: 12px; top: 12px; color: #aaa; font: 13px system-ui, sans-serif;
+            background: #000a; padding: 8px 10px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="help">Click the map to set a waypoint — the route paints in, then the car drives it.</div>
+  <div id="hud"><div id="street"></div><div id="area"></div></div>
+  <script>
+    // Serve the repo root (e.g. `python3 -m http.server`) and open /web/ — the page loads the same
+    // style the iOS app bundles. Routing uses the public OSRM demo server (fine for previews only).
+    let player = [28.9850, 41.0370]; // Taksim, Istanbul
+    let bearing = 0;
+    let drive = null;
+
+    const map = new maplibregl.Map({
+      container: 'map', style: '../style/gta-style.json',
+      center: player, zoom: 15.5, pitch: 50, attributionControl: { compact: true }
+    });
+
+    map.on('style.load', () => {
+      map.addImage('player-arrow', arrowImage(40));
+      setPlayer();
+      pulseGlow();
+    });
+
+    map.on('click', async (e) => {
+      const dest = [e.lngLat.lng, e.lngLat.lat];
+      const url = `https://router.project-osrm.org/route/v1/driving/${player.join(',')};${dest.join(',')}?overview=full&geometries=geojson`;
+      const res = await fetch(url).then(r => r.json()).catch(() => null);
+      const coords = res?.routes?.[0]?.geometry?.coordinates ?? [player, dest];
+      map.getSource('destination').setData({ type: 'Point', coordinates: coords.at(-1) });
+      paintRoute(coords, () => startDrive(coords));
+    });
+
+    function paintRoute(coords, done) {
+      const start = performance.now();
+      (function frame(now) {
+        const t = Math.min((now - start) / 1400, 1), eased = 1 - Math.pow(1 - t, 3);
+        const n = Math.max(2, Math.floor(coords.length * eased));
+        map.getSource('route').setData({ type: 'LineString', coordinates: coords.slice(0, n) });
+        t < 1 ? requestAnimationFrame(frame) : done();
+      })(start);
+    }
+
+    function startDrive(coords) {
+      cancelAnimationFrame(drive);
+      const speed = 25; // m/s
+      let i = 0, along = 0, last = performance.now();
+      (function frame(now) {
+        along += speed * (now - last) / 1000; last = now;
+        while (i < coords.length - 1 && along >= meters(coords[i], coords[i + 1])) {
+          along -= meters(coords[i], coords[i + 1]); i++;
+        }
+        if (i >= coords.length - 1) return;
+        const a = coords[i], b = coords[i + 1], f = along / meters(a, b);
+        player = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+        bearing = heading(a, b);
+        setPlayer();
+        map.jumpTo({ center: player, bearing, pitch: 50, zoom: 16.5, padding: { top: innerHeight * 0.35 } });
+        drive = requestAnimationFrame(frame);
+      })(last);
+    }
+
+    function setPlayer() {
+      map.getSource('player').setData({ type: 'Feature', properties: { bearing }, geometry: { type: 'Point', coordinates: player } });
+      updateHud();
+    }
+
+    let lastHud = 0;
+    function updateHud() {
+      if (performance.now() - lastHud < 500) return;
+      lastHud = performance.now();
+      const pt = map.project(player);
+      const road = map.queryRenderedFeatures(pt, { layers: ['road-label'] })[0]
+                ?? map.queryRenderedFeatures([[pt.x - 30, pt.y - 30], [pt.x + 30, pt.y + 30]], { layers: ['road-label'] })[0];
+      const area = map.queryRenderedFeatures({ layers: ['place-neighbourhood', 'place-city'] })
+        .map(f => ({ f, d: meters(f.geometry.coordinates, player) })).sort((x, y) => x.d - y.d)[0];
+      document.getElementById('street').textContent = (road?.properties.name ?? '').toUpperCase();
+      document.getElementById('area').textContent = area?.f.properties.name ?? '';
+    }
+
+    function pulseGlow() {
+      const phase = (Math.sin(performance.now() / 1000 * 2.4) + 1) / 2;
+      map.setPaintProperty('route-glow-outer', 'line-opacity', 0.2 + 0.3 * phase);
+      requestAnimationFrame(pulseGlow);
+    }
+
+    function arrowImage(s) {
+      const c = document.createElement('canvas'); c.width = c.height = s;
+      const g = c.getContext('2d');
+      g.beginPath();
+      g.moveTo(s * .5, s * .12); g.lineTo(s * .8, s * .86); g.lineTo(s * .5, s * .68); g.lineTo(s * .2, s * .86);
+      g.closePath(); g.lineJoin = 'round';
+      g.shadowColor = 'rgba(255,255,255,.6)'; g.shadowBlur = s * .15; g.fillStyle = '#fff'; g.fill();
+      g.shadowBlur = 0; g.lineWidth = s * .06; g.strokeStyle = '#0d0d0d'; g.stroke();
+      return g.getImageData(0, 0, s, s);
+    }
+
+    function meters(a, b) {
+      const R = 6371000, r = Math.PI / 180;
+      const x = (b[0] - a[0]) * r * Math.cos((a[1] + b[1]) / 2 * r), y = (b[1] - a[1]) * r;
+      return Math.hypot(x, y) * R;
+    }
+    function heading(a, b) {
+      const r = Math.PI / 180;
+      const y = Math.sin((b[0] - a[0]) * r) * Math.cos(b[1] * r);
+      const x = Math.cos(a[1] * r) * Math.sin(b[1] * r) - Math.sin(a[1] * r) * Math.cos(b[1] * r) * Math.cos((b[0] - a[0]) * r);
+      return (Math.atan2(y, x) / r + 360) % 360;
+    }
+  </script>
+</body>
+</html>

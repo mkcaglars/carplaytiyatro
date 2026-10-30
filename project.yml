@@ -1,0 +1,52 @@
+# Generate the Xcode project with:  brew install xcodegen && xcodegen
+name: GTAMap
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "16.0"
+packages:
+  MapLibre:
+    url: https://github.com/maplibre/maplibre-gl-native-distribution
+    from: 6.0.0
+targets:
+  GTAMap:
+    type: application
+    platform: iOS
+    sources:
+      - path: GTAMap
+      - path: style/gta-style.json
+        buildPhase: resources
+    dependencies:
+      - package: MapLibre
+        product: MapLibre
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.gtamap
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.9"
+        CODE_SIGN_STYLE: Automatic
+    entitlements:
+      path: GTAMap/Resources/GTAMap.entitlements
+      properties:
+        # Navigation-app CarPlay entitlement. Works in the Simulator as-is;
+        # on a device Apple must grant it to your team first.
+        com.apple.developer.carplay-maps: true
+    info:
+      path: GTAMap/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: GTA Map
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSLocationWhenInUseUsageDescription: Your position drives the live GTA-style map and turn-by-turn guidance.
+        UIBackgroundModes: [location]
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Phone
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).PhoneSceneDelegate
+            CPTemplateApplicationSceneSessionRoleApplication:
+              - UISceneConfigurationName: CarPlay
+                UISceneClassName: CPTemplateApplicationScene
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).CarPlaySceneDelegate
